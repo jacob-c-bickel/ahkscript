@@ -29,18 +29,13 @@ class AhkScript:
         self.script_process = None
         self.listener_thread = None
 
-        self.templates = {"filepaths": [], "raw_lines": []}
+        self.templates = {"filepaths": set(), "raw_lines": []}
         self.hotkeys = []
 
-        self.add_template(filepath="*common/script_header")
-        if termination_trigger is not None:
-            self.add_hotkey(trigger=termination_trigger, ahk_code="ExitApp")
 
-
-    def _generate_script(self):
+    def _generate_script_code(self):
         """
-        Generates the AHK script file using the added hotkeys and templates.
-        Updates script_filepath to reference the created file.
+        Generates the AHK script code using the added hotkeys and templates.
         """
         lines = []
 
@@ -58,17 +53,26 @@ class AhkScript:
         for hotkey in self.hotkeys:
             lines.extend(hotkey.render())
 
+        return lines
+
+
+    def _generate_script(self):
+        """
+        Creates the AHK script and updates script_filepath.
+        """
+        lines = self._generate_script_code()
+
         with tempfile.NamedTemporaryFile(suffix=".ahk", delete=False) as f:
             f.write(str.encode('\n'.join(lines)))
             self.script_filepath = f.name
 
 
-    def _listen_loop(self):
+    def _listen_loop(self, script_stdout):
         """
         Populates the output queue with all non blank stdout from the script
         subprocess.
         """
-        for line in self.script_process.stdout:
+        for line in script_stdout:
             line = line.strip()
             if line:
                 self.output_queue.put(line)
@@ -96,7 +100,7 @@ class AhkScript:
             if filepath.startswith("*common/"):
                 common_template = filepath[8:]
                 if common_template in AhkScript.COMMON_TEMPLATES:
-                    self.templates["filepaths"].append(os.path.join(
+                    self.templates["filepaths"].add(os.path.join(
                         os.path.dirname(__file__),
                         "common_templates",
                         AhkScript.COMMON_TEMPLATES[common_template]
@@ -104,7 +108,7 @@ class AhkScript:
                 else:
                     sys.stderr.write(f"Unknown common template: {filepath}")
             else:
-                self.templates["filepaths"].append(filepath)
+                self.templates["filepaths"].add(filepath)
 
 
     def add_hotkey(self, hotkey=None, trigger=None, condition=None, response=None, ahk_code=None):
@@ -123,6 +127,10 @@ class AhkScript:
             sys.stderr.write("Script already running.")
             return
 
+        self.add_template(filepath="*common/script_header")
+        if termination_trigger is not None:
+            self.add_hotkey(trigger=termination_trigger, ahk_code="ExitApp")
+
         self.output_queue = queue.Queue()
         self._generate_script()
         self.script_process = subprocess.Popen(
@@ -132,7 +140,8 @@ class AhkScript:
             stdin=subprocess.PIPE,
             universal_newlines=True
         )
-        self.listener_thread = threading.Thread(target=self._listen_loop)
+        self.listener_thread = threading.Thread(target=self._listen_loop,
+                args=self.script_process.stdout)
         self.listener_thread.start()
 
         return self.output_queue
