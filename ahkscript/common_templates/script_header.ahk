@@ -1,3 +1,4 @@
+#Persistent
 SendMode, Input
 
 stdout(message, ending:="`n", flush:=True) {

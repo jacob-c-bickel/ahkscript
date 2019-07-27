@@ -20,7 +20,7 @@ class AhkScript:
         "utils": "utils.ahk"
     }
 
-    def __init__(self, termination_trigger=None):
+    def __init__(self):
         self.ahk_path = self._get_ahk_path()
 
         self.output_queue = None
@@ -128,8 +128,6 @@ class AhkScript:
             return
 
         self.add_template(filepath="*common/script_header")
-        if termination_trigger is not None:
-            self.add_hotkey(trigger=termination_trigger, ahk_code="ExitApp")
 
         self.output_queue = queue.Queue()
         self._generate_script()
@@ -141,7 +139,7 @@ class AhkScript:
             universal_newlines=True
         )
         self.listener_thread = threading.Thread(target=self._listen_loop,
-                args=self.script_process.stdout)
+                args=[self.script_process.stdout])
         self.listener_thread.start()
 
         return self.output_queue
