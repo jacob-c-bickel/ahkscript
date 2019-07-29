@@ -1,34 +1,24 @@
 class Hotkey:
-    def __init__(self, trigger, condition=None, response=None, ahk_code=None):
+
+    """The representation of an AHK hotkey used in script generation.
+    
+    The trigger, condition, and body_lines are all AHK code directly inserted
+    into the script. The response is a string that is sent to the script's
+    stdout upon completion."""
+
+    def __init__(self, trigger, condition="", body_lines=[], response=None):
         self.trigger = trigger
         self.condition = condition
-        if response is not None:
-            self.response = response.replace("\"", "\"\"")
-        else:
-            self.response = None
-        self.ahk_code = ahk_code
+        self.body_lines = body_lines
+        self.response = response
 
-
-    def render(self):
+    def render_lines(self):
+        """Return the list of AHK code lines that make up the hotkey."""
         lines = []
-
-        # Condition
-        if self.condition is None:
-            lines.append("#if")
-        else:
-            lines.append(f"#if {self.condition}")
-
-        # Trigger
+        lines.append(f"#if {self.condition}")
         lines.append(f"{self.trigger}::")
-
-        # Code
-        if self.ahk_code is not None:
-            lines.extend(["\t"+l for l in self.ahk_code.split("\n")])
-
+        lines.extend("\t"+l for l in self.body_lines)
         if self.response is not None:
-            lines.append(f"\tstdout(\"{self.response}\")")
-
+            lines.append(f'\tstdout("{self.response}")')
         lines.append("return")
-        lines.append("")
-
         return lines

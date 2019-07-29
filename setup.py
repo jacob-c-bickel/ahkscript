@@ -6,7 +6,7 @@ def readme():
 
 setup(
     name='ahkscript',
-    version='0.9.0',
+    version='0.9.1',
     description='AHK Script generator with helpful functionality for interacting with a Python script.',
     url='https://github.com/jacob-c-bickel/ahkscript',
     author='Jacob Bickel',

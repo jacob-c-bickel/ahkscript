@@ -18,7 +18,7 @@ __terminate() {
     ExitApp
 }
 
-SetTimer, listener, 1000
+SetTimer, listener, 100
 
 listener:
     for i, line in StrSplit(stdin(), "`n", "`r") {

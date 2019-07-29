@@ -1,2 +1,3 @@
 from .ahkscript import AhkScript
-from .hotkey import Hotkey
+from .ahkscript import Hotkey
+from .ahkscript import Template
